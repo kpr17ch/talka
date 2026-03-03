@@ -72,6 +72,7 @@ class Orchestrator:
         cleaned = re.sub(r"^\s*\|.*\|\s*$", "", cleaned, flags=re.MULTILINE)
         cleaned = re.sub(r"^\s*[-*+]\s+", "", cleaned, flags=re.MULTILINE)
         cleaned = re.sub(r"^\s*\d+[.)]\s+", "", cleaned, flags=re.MULTILINE)
+        cleaned = self._strip_markdown_emphasis(cleaned)
         cleaned = re.sub(
             r"(?m)^\s*(?:\$|>)\s*(?:npm|npx|pnpm|yarn|pip|python|python3|node|git|ssh|systemctl|uvicorn|pytest|curl|wget)\b.*$",
             " ",
@@ -89,6 +90,7 @@ class Orchestrator:
 
     def _finalize_spoken_text(self, text: str, *, has_technical_details: bool) -> str:
         cleaned = " ".join((text or "").split())
+        cleaned = self._strip_markdown_emphasis(cleaned)
         if not cleaned:
             if has_technical_details and self.settings.orchestrator_voice_detail_hint:
                 return (
@@ -105,6 +107,17 @@ class Orchestrator:
         max_chars = max(0, self.settings.orchestrator_max_speak_chars)
         if max_chars and len(cleaned) > max_chars:
             cleaned = self._truncate(cleaned, max_chars)
+        return cleaned
+
+    @staticmethod
+    def _strip_markdown_emphasis(text: str) -> str:
+        cleaned = text
+        cleaned = re.sub(r"\*\*([^*\n]+)\*\*", r"\1", cleaned)
+        cleaned = re.sub(r"__([^_\n]+)__", r"\1", cleaned)
+        cleaned = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"\1", cleaned)
+        cleaned = re.sub(r"(?<!_)_([^_\n]+)_(?!_)", r"\1", cleaned)
+        cleaned = re.sub(r"~~([^~\n]+)~~", r"\1", cleaned)
+        cleaned = re.sub(r"(?<=\s)[*_~]+(?=\s|$)", " ", cleaned)
         return cleaned
 
     @staticmethod
@@ -152,7 +165,7 @@ class Orchestrator:
                         "Lies niemals Code, Dateipfade, URLs, Shell-Kommandos oder Logzeilen wortwoertlich vor. "
                         "Erklaere stattdessen Bedeutung, Risiko und naechsten Schritt. "
                         "Wenn technische Details vorhanden sind, verweise natuerlich auf Telegram. "
-                        "Keine Markdown-Syntax."
+                        "Keine Markdown-Syntax und keine Hervorhebungszeichen wie **, *, _, ~~ oder Backticks."
                     ),
                 },
                 {"role": "user", "content": raw_text},

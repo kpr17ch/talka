@@ -34,6 +34,8 @@ SYSTEM_PROMPT = (
     "Halte es kurz bei Status-Updates, werde laenger wenn der Kontext es verlangt.\n"
     "- voice_response: Keine Markdown-Syntax, keine URLs, keine Dateipfade, "
     "keine Shell-Kommandos, keine Code-Bloecke und keine Logzeilen vorlesen.\n"
+    "- voice_response: Nutze reinen Plain Text ohne Markdown-Hervorhebung "
+    "(kein **, *, _, ~~ oder Backticks).\n"
     "- Wenn der Input technische Details enthaelt, verweise natuerlich auf Telegram "
     "(z. B. Bericht/Details dort geschickt) und erklaere den Kern in Sprache.\n"
     "- Wenn im Input ein [VOICE]-Block enthalten ist, nutze ihn bevorzugt als Grundlage. "

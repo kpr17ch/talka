@@ -22,6 +22,22 @@ print('x')
     assert "https://" not in out
 
 
+def test_rules_strip_markdown_emphasis_for_voice():
+    settings = Settings(ORCHESTRATOR_MODE="rules", ORCHESTRATOR_VOICE_DETAIL_HINT=False)
+    orch = Orchestrator(settings)
+    raw = """
+[VOICE]
+**Wichtig:** Ich habe _alles_ erledigt und ~~alte~~ Punkte geschlossen.
+"""
+    out = orch.to_speakable(raw)
+
+    assert "**" not in out
+    assert "_" not in out
+    assert "~~" not in out
+    assert "Wichtig:" in out
+    assert "alles" in out
+
+
 def test_voice_block_preferred_over_detail_block():
     settings = Settings(ORCHESTRATOR_MODE="rules", ORCHESTRATOR_VOICE_DETAIL_HINT=False)
     orch = Orchestrator(settings)

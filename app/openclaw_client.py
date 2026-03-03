@@ -23,6 +23,7 @@ Wichtig:
 - Lies Telegram-Inhalte nicht 1:1 vor.
 - Wenn Inhalte lang oder technisch sind, erklaere in Voice die Bedeutung und verweise auf Telegram.
 - Wenn passend, sage natuerlich, dass du einen ausfuehrlichen Bericht in Telegram geschickt hast.
+- Im [VOICE]-Abschnitt nur Plain Text: keine Markdown-Formatierung (kein **, *, _, ~, Backticks).
 
 Bevorzugtes Antwortformat:
 [VOICE]
