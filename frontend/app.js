@@ -28,6 +28,13 @@ const FRAME_SOURCES = {
 };
 const SPEAK_FRAME_KEYS = ["speakAE", "speakLTSCH", "speakO", "speakPMN"];
 const WORK_FRAME_KEYS = ["work0", "work1", "work2", "work3"];
+const RICK_CHROMA_KEY_PATTERN = /\/assets\/character\/rick_/;
+const CHROMA_KEY_MIN_GREEN = 78;
+const CHROMA_KEY_MIN_DOMINANCE = 18;
+const CHROMA_KEY_SOFT_RANGE = 58;
+const CHROMA_KEY_MAX_RED = 210;
+const CHROMA_KEY_MAX_BLUE = 210;
+const CHROMA_KEY_DESPILL = 0.68;
 const SILENCE_THRESHOLD_RMS = 0.022;
 const SILENCE_HOLD_MS = 150;
 const MAX_TURN_WAIT_MS = 12 * 60 * 1000;
@@ -152,23 +159,83 @@ async function decodeFrameToSurface(sourceUrl) {
       return null;
     }
     const blob = await response.blob();
+    let sourceSurface = null;
     if ("createImageBitmap" in window) {
-      return await createImageBitmap(blob);
+      sourceSurface = await createImageBitmap(blob);
+    } else {
+      sourceSurface = await new Promise((resolve) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const image = new Image();
+        image.decoding = "async";
+        image.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(image);
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(null);
+        };
+        image.src = objectUrl;
+      });
     }
-    return await new Promise((resolve) => {
-      const objectUrl = URL.createObjectURL(blob);
-      const image = new Image();
-      image.decoding = "async";
-      image.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve(image);
-      };
-      image.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve(null);
-      };
-      image.src = objectUrl;
-    });
+    if (!sourceSurface) {
+      return null;
+    }
+
+    const width = sourceSurface.width || 2048;
+    const height = sourceSurface.height || 2048;
+    const workCanvas = document.createElement("canvas");
+    workCanvas.width = width;
+    workCanvas.height = height;
+    const workContext = workCanvas.getContext("2d", { alpha: true, willReadFrequently: true });
+    if (!workContext) {
+      return sourceSurface;
+    }
+
+    workContext.drawImage(sourceSurface, 0, 0, width, height);
+    if (RICK_CHROMA_KEY_PATTERN.test(sourceUrl)) {
+      const imageData = workContext.getImageData(0, 0, width, height);
+      const pixels = imageData.data;
+      for (let index = 0; index < pixels.length; index += 4) {
+        const r = pixels[index];
+        const g = pixels[index + 1];
+        const b = pixels[index + 2];
+        const a = pixels[index + 3];
+        if (a === 0) {
+          continue;
+        }
+        if (g < CHROMA_KEY_MIN_GREEN || r > CHROMA_KEY_MAX_RED || b > CHROMA_KEY_MAX_BLUE) {
+          continue;
+        }
+        const dominance = g - Math.max(r, b);
+        if (dominance < CHROMA_KEY_MIN_DOMINANCE) {
+          continue;
+        }
+
+        const dominanceWeight = Math.min(1, (dominance - CHROMA_KEY_MIN_DOMINANCE) / CHROMA_KEY_SOFT_RANGE);
+        const greenWeight = Math.min(1, (g - CHROMA_KEY_MIN_GREEN) / 120);
+        const keyStrength = dominanceWeight * (0.45 + greenWeight * 0.55);
+        if (keyStrength <= 0) {
+          continue;
+        }
+
+        const targetAlpha = Math.max(0, Math.round(a * (1 - keyStrength)));
+        pixels[index + 3] = targetAlpha;
+
+        const neutral = Math.max(r, b);
+        const despillStrength = CHROMA_KEY_DESPILL * keyStrength;
+        pixels[index + 1] = Math.max(
+          0,
+          Math.min(255, Math.round(g - (g - neutral) * despillStrength))
+        );
+      }
+      workContext.putImageData(imageData, 0, 0);
+    }
+
+    if ("createImageBitmap" in window) {
+      return await createImageBitmap(workCanvas);
+    }
+    return workCanvas;
   } catch {
     return null;
   }
