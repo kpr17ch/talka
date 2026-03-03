@@ -12,6 +12,8 @@
   - local repo is source of truth for changes
   - commit locally (Conventional Commits) and push to GitHub
   - deploy by pulling on Hetzner in `/opt/voice-bridge`
+  - default deploy command from local: `./deploy/scripts/deploy-hetzner`
   - restart `voice-bridge.service` after pull
+  - verify after deploy: `systemctl is-active voice-bridge.service` and `curl -fsS http://127.0.0.1:8089/api/health`
   - avoid direct ad-hoc edits on Hetzner except emergency hotfixes
 - Handoff requirement: mention parity status (`web/backend`, `ios`) in final update.
