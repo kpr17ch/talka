@@ -18,7 +18,7 @@
   </head>
   <body>
     <main class="shell">
-      <section class="character-stage" aria-label="AI Character">
+      <button id="characterButton" class="character-stage idle" type="button" aria-label="Mit Rick sprechen">
         <img
           id="characterFallback"
           class="character-fallback"
@@ -29,31 +29,8 @@
           hidden
         />
         <canvas id="characterCanvas" class="character-canvas" aria-hidden="true"></canvas>
-      </section>
-
-      <div class="button-wrap">
-        <button id="voiceButton" class="voice-btn idle" type="button" aria-label="Voice Aufnahme starten oder stoppen">
-          <span class="voice-core"></span>
-        </button>
-        <div id="stateLabel" class="sr-only" aria-live="polite">idle</div>
-      </div>
-      <p id="errorText" class="error" hidden></p>
+      </button>
       <audio id="audioPlayer" preload="none"></audio>
-
-      <section id="dashboard" class="dashboard" hidden>
-        <div id="currentTask" class="panel">
-          <h3 class="panel-title">Aktuelle Aufgabe</h3>
-          <div class="panel-content"></div>
-        </div>
-        <div id="pinboard" class="panel">
-          <h3 class="panel-title">Pinwand</h3>
-          <div class="panel-content"></div>
-        </div>
-        <div id="workNotes" class="panel">
-          <h3 class="panel-title">Notizen</h3>
-          <div class="panel-content"></div>
-        </div>
-      </section>
     </main>
 
     <script src="/app.js" type="module"></script>

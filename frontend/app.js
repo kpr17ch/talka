@@ -1,14 +1,7 @@
-const voiceButton = document.querySelector("#voiceButton");
-const stateLabel = document.querySelector("#stateLabel");
-const errorText = document.querySelector("#errorText");
+const characterButton = document.querySelector("#characterButton");
 const audioPlayer = document.querySelector("#audioPlayer");
 const characterCanvas = document.querySelector("#characterCanvas");
 const characterFallback = document.querySelector("#characterFallback");
-
-const dashboard = document.querySelector("#dashboard");
-const currentTaskPanel = document.querySelector("#currentTask .panel-content");
-const pinboardPanel = document.querySelector("#pinboard .panel-content");
-const workNotesPanel = document.querySelector("#workNotes .panel-content");
 
 const IDLE_MAIN_FRAME_KEY = "idleMain";
 const IDLE_SMILE_FRAME_KEY = "idleSmile";
@@ -82,6 +75,7 @@ let availableWorkFrameKeys = [];
 let currentTurnWs = null;
 let idleAnimationTimer = null;
 let idleUseSmileFrame = false;
+let currentUiState = "idle";
 
 function formatError(error) {
   if (!error) return "Unbekannter Fehler.";
@@ -91,13 +85,13 @@ function formatError(error) {
 }
 
 function showError(message) {
-  errorText.hidden = false;
-  errorText.textContent = message;
+  if (message) {
+    console.warn("[voice-bridge]", message);
+  }
 }
 
 function clearError() {
-  errorText.hidden = true;
-  errorText.textContent = "";
+  // Intentionally no visible error UI for the minimal character-only interface.
 }
 
 function initTurnMetrics() {
@@ -299,7 +293,7 @@ async function prepareCharacterRenderer() {
   drawFrame(IDLE_MAIN_FRAME_KEY);
   characterCanvas.classList.add("ready");
   characterFallback.hidden = true;
-  setState(stateLabel.textContent || "idle");
+  setState(currentUiState || "idle");
 }
 
 function stopAudioLevelMonitor() {
@@ -563,45 +557,15 @@ function startWorkingAnimation() {
 }
 
 function updateDashboard(panels) {
-  if (!panels) {
-    return;
-  }
-  dashboard.hidden = false;
-
-  if (panels.current_task && panels.current_task.title) {
-    let html = `<div class="task-title">${escapeHtml(panels.current_task.title)}</div>`;
-    if (panels.current_task.steps && panels.current_task.steps.length > 0) {
-      html += "<ul>" + panels.current_task.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("") + "</ul>";
-    }
-    currentTaskPanel.innerHTML = html;
-  } else {
-    currentTaskPanel.innerHTML = '<span class="empty">Keine aktive Aufgabe</span>';
-  }
-
-  if (panels.pinboard && panels.pinboard.length > 0) {
-    pinboardPanel.innerHTML = "<ul>" + panels.pinboard.map((item) => `<li>${escapeHtml(item)}</li>`).join("") + "</ul>";
-  } else {
-    pinboardPanel.innerHTML = '<span class="empty">Leer</span>';
-  }
-
-  if (panels.work_notes && panels.work_notes.length > 0) {
-    workNotesPanel.innerHTML =
-      "<ul>" + panels.work_notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("") + "</ul>";
-  } else {
-    workNotesPanel.innerHTML = '<span class="empty">Keine Notizen</span>';
-  }
-}
-
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+  // Minimal mode: no dashboard or visible text panels.
 }
 
 function setState(state) {
-  stateLabel.textContent = state;
-  voiceButton.classList.remove("idle", "listening", "thinking", "speaking");
-  voiceButton.classList.add(state);
+  currentUiState = state;
+  if (characterButton) {
+    characterButton.classList.remove("idle", "listening", "thinking", "speaking");
+    characterButton.classList.add(state);
+  }
   stopWorkingAnimation();
   stopSpeakingAnimation();
   stopIdleAnimation();
@@ -981,17 +945,17 @@ async function cancelPendingTurn() {
   }
 }
 
-voiceButton.addEventListener("click", async () => {
+characterButton?.addEventListener("click", async () => {
   try {
-    if (stateLabel.textContent === "thinking") {
+    if (currentUiState === "thinking") {
       await cancelPendingTurn();
       return;
     }
     if (isRecording) {
       stopRecording();
-    } else {
-      await startRecording();
+      return;
     }
+    await startRecording();
   } catch (error) {
     setState("idle");
     showError(formatError(error));
