@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     elevenlabs_model_id: str = Field(default="eleven_multilingual_v2", alias="ELEVENLABS_MODEL_ID")
     elevenlabs_stability: float = Field(default=0.4, alias="ELEVENLABS_STABILITY")
     elevenlabs_similarity_boost: float = Field(default=0.8, alias="ELEVENLABS_SIMILARITY_BOOST")
+    elevenlabs_speed: float = Field(default=1.0, alias="ELEVENLABS_SPEED")
+    elevenlabs_style: float = Field(default=0.0, alias="ELEVENLABS_STYLE")
 
     # Logging
     debug_log_full_text: bool = Field(default=False, alias="DEBUG_LOG_FULL_TEXT")

@@ -29,6 +29,8 @@ class TTSService:
             "voice_settings": {
                 "stability": self.settings.elevenlabs_stability,
                 "similarity_boost": self.settings.elevenlabs_similarity_boost,
+                "speed": self.settings.elevenlabs_speed,
+                "style": self.settings.elevenlabs_style,
             },
         }
 
