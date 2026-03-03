@@ -27,7 +27,7 @@ REPO_SSH_URL=git@github.com:<owner>/talka.git ./deploy/scripts/bootstrap-hetzner
 ```
 
 This command:
-- backs up existing `/opt/voice-bridge` if it is not a git repo
+- renames existing `/opt/voice-bridge` to a timestamped backup if it is not a git repo
 - clones from GitHub
 - pulls `main`
 - installs dependencies

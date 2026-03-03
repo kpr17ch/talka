@@ -19,8 +19,7 @@ REPO_SSH_URL="$3"
 
 if [[ -d "${TARGET_DIR}" && ! -d "${TARGET_DIR}/.git" ]]; then
   TS="$(date +%Y%m%d-%H%M%S)"
-  cp -a "${TARGET_DIR}" "${TARGET_DIR}.backup.${TS}"
-  rm -rf "${TARGET_DIR}"
+  mv "${TARGET_DIR}" "${TARGET_DIR}.backup.${TS}"
 fi
 
 if [[ ! -d "${TARGET_DIR}/.git" ]]; then
