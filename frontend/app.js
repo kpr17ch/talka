@@ -10,21 +10,24 @@ const currentTaskPanel = document.querySelector("#currentTask .panel-content");
 const pinboardPanel = document.querySelector("#pinboard .panel-content");
 const workNotesPanel = document.querySelector("#workNotes .panel-content");
 
-const IDLE_FRAME_KEY = "idle";
+const IDLE_MAIN_FRAME_KEY = "idleMain";
+const IDLE_SMILE_FRAME_KEY = "idleSmile";
+const PAUSE_FRAME_KEY = "speakPMN";
+const VISEME_PAUSE = "__pause__";
 const FRAME_SOURCES = {
-  idle: "/assets/character/l_base.png",
-  speak0: "/assets/character/l_speak_aei.png",
-  speak1: "/assets/character/l_speak_e.png",
-  speak2: "/assets/character/l_speak_jchsh.png",
-  speak3: "/assets/character/l_speak_l.png",
-  speak4: "/assets/character/l_speak_o.png",
-  speak5: "/assets/character/l_speak_ts.png",
-  work0: "/assets/character/l_work_a.png",
-  work1: "/assets/character/l_work_b.png",
-  work2: "/assets/character/l_work_c.png",
+  idleMain: "/assets/character/rick_main.jpeg",
+  idleSmile: "/assets/character/rick_smiling.jpeg",
+  speakAE: "/assets/character/rick_speak_ae.jpeg",
+  speakLTSCH: "/assets/character/rick_speak_ltsch.jpeg",
+  speakO: "/assets/character/rick_speak_o.jpeg",
+  speakPMN: "/assets/character/rick_speak_pmn.jpeg",
+  work0: "/assets/character/rick_work_a.jpeg",
+  work1: "/assets/character/rick_work_b.jpeg",
+  work2: "/assets/character/rick_work_c.jpeg",
+  work3: "/assets/character/rick_work_d.jpeg",
 };
-const SPEAK_FRAME_KEYS = ["speak0", "speak1", "speak2", "speak3", "speak4", "speak5"];
-const WORK_FRAME_KEYS = ["work0", "work1", "work2"];
+const SPEAK_FRAME_KEYS = ["speakAE", "speakLTSCH", "speakO", "speakPMN"];
+const WORK_FRAME_KEYS = ["work0", "work1", "work2", "work3"];
 const SILENCE_THRESHOLD_RMS = 0.022;
 const SILENCE_HOLD_MS = 150;
 const MAX_TURN_WAIT_MS = 12 * 60 * 1000;
@@ -37,7 +40,8 @@ let conversationId = null;
 let speakText = "";
 
 let speakingAnimationTimer = null;
-let speakingFrameIndex = 0;
+let speakingSequence = [];
+let speakingSequenceIndex = 0;
 let isSpeechPaused = false;
 
 let audioContext = null;
@@ -64,6 +68,8 @@ let workingAnimationTimer = null;
 let workingFrameIndex = 0;
 let availableWorkFrameKeys = [];
 let currentTurnWs = null;
+let idleAnimationTimer = null;
+let idleUseSmileFrame = false;
 
 function formatError(error) {
   if (!error) return "Unbekannter Fehler.";
@@ -120,14 +126,14 @@ function logTurnMetrics(eventName) {
 }
 
 function getFrameSurface(frameKey) {
-  return frameSurfaces.get(frameKey) || frameSurfaces.get(IDLE_FRAME_KEY) || null;
+  return frameSurfaces.get(frameKey) || frameSurfaces.get(IDLE_MAIN_FRAME_KEY) || null;
 }
 
 function drawFrame(frameKey) {
   if (!rendererReady || !canvasContext) {
     return;
   }
-  const nextFrameKey = frameSurfaces.has(frameKey) ? frameKey : IDLE_FRAME_KEY;
+  const nextFrameKey = frameSurfaces.has(frameKey) ? frameKey : IDLE_MAIN_FRAME_KEY;
   if (nextFrameKey === currentFrameKey) {
     return;
   }
@@ -176,7 +182,7 @@ function warmupFrameSurfaces() {
   if (!context) {
     return;
   }
-  [IDLE_FRAME_KEY, ...availableSpeakFrameKeys].forEach((frameKey) => {
+  [IDLE_MAIN_FRAME_KEY, IDLE_SMILE_FRAME_KEY, ...availableSpeakFrameKeys, ...availableWorkFrameKeys].forEach((frameKey) => {
     const surface = getFrameSurface(frameKey);
     if (!surface) {
       return;
@@ -197,7 +203,7 @@ async function prepareCharacterRenderer() {
     }
   });
 
-  const idleSurface = getFrameSurface(IDLE_FRAME_KEY);
+  const idleSurface = getFrameSurface(IDLE_MAIN_FRAME_KEY);
   if (!idleSurface) {
     rendererReady = false;
     return;
@@ -216,12 +222,10 @@ async function prepareCharacterRenderer() {
   canvasContext.clearRect(0, 0, characterCanvas.width, characterCanvas.height);
   rendererReady = true;
   warmupFrameSurfaces();
-  drawFrame(IDLE_FRAME_KEY);
+  drawFrame(IDLE_MAIN_FRAME_KEY);
   characterCanvas.classList.add("ready");
   characterFallback.hidden = true;
-  if (stateLabel.textContent === "speaking") {
-    startSpeakingAnimation();
-  }
+  setState(stateLabel.textContent || "idle");
 }
 
 function stopAudioLevelMonitor() {
@@ -312,30 +316,128 @@ function setAudioSourceFromBase64(audioBase64, audioMime) {
   audioPlayer.src = currentAudioObjectUrl;
 }
 
+function getPauseFrameKey() {
+  return frameSurfaces.has(PAUSE_FRAME_KEY) ? PAUSE_FRAME_KEY : IDLE_MAIN_FRAME_KEY;
+}
+
+function resolveSpeechFrameKey(key) {
+  if (frameSurfaces.has(key)) {
+    return key;
+  }
+  if (availableSpeakFrameKeys.length > 0) {
+    return availableSpeakFrameKeys[0];
+  }
+  return IDLE_MAIN_FRAME_KEY;
+}
+
+function buildSpeechFrameSequence(text) {
+  const normalized = (text || "").toLowerCase();
+  if (!normalized) {
+    return [getPauseFrameKey()];
+  }
+
+  const sequence = [];
+  for (let index = 0; index < normalized.length; index += 1) {
+    const char = normalized[index];
+    const next = normalized[index + 1] || "";
+    const nextTwo = normalized.slice(index, index + 3);
+
+    if (/\s/.test(char)) {
+      sequence.push(VISEME_PAUSE);
+      continue;
+    }
+    if (/[.,!?;:]/.test(char)) {
+      sequence.push(VISEME_PAUSE, VISEME_PAUSE);
+      continue;
+    }
+    if (nextTwo === "sch") {
+      sequence.push(resolveSpeechFrameKey("speakLTSCH"));
+      index += 2;
+      continue;
+    }
+    if ((char === "c" && next === "h") || (char === "s" && next === "h") || (char === "t" && next === "s")) {
+      sequence.push(resolveSpeechFrameKey("speakLTSCH"));
+      index += 1;
+      continue;
+    }
+    if (/[aeiyäêéè]/.test(char)) {
+      sequence.push(resolveSpeechFrameKey("speakAE"));
+      continue;
+    }
+    if (/[ouöüw]/.test(char)) {
+      sequence.push(resolveSpeechFrameKey("speakO"));
+      continue;
+    }
+    if (/[bmpn]/.test(char)) {
+      sequence.push(resolveSpeechFrameKey("speakPMN"));
+      continue;
+    }
+    if (/[ltszdxjcrqkgfhv]/.test(char)) {
+      sequence.push(resolveSpeechFrameKey("speakLTSCH"));
+      continue;
+    }
+    sequence.push(VISEME_PAUSE);
+  }
+
+  return sequence.length > 0 ? sequence : [getPauseFrameKey()];
+}
+
 function stopSpeakingAnimation() {
   if (speakingAnimationTimer) {
     window.clearInterval(speakingAnimationTimer);
     speakingAnimationTimer = null;
   }
   stopAudioLevelMonitor();
-  drawFrame(IDLE_FRAME_KEY);
+  speakingSequence = [];
+  speakingSequenceIndex = 0;
 }
 
 function startSpeakingAnimation() {
   stopSpeakingAnimation();
-  if (!rendererReady || availableSpeakFrameKeys.length === 0) {
-    drawFrame(IDLE_FRAME_KEY);
+  if (!rendererReady) {
+    drawFrame(IDLE_MAIN_FRAME_KEY);
     return;
   }
-  speakingFrameIndex = 0;
+  speakingSequence = buildSpeechFrameSequence(speakText);
+  speakingSequenceIndex = 0;
+  drawFrame(getPauseFrameKey());
   speakingAnimationTimer = window.setInterval(() => {
     if (isSpeechPaused) {
-      drawFrame(IDLE_FRAME_KEY);
+      drawFrame(getPauseFrameKey());
       return;
     }
-    drawFrame(availableSpeakFrameKeys[speakingFrameIndex]);
-    speakingFrameIndex = (speakingFrameIndex + 1) % availableSpeakFrameKeys.length;
-  }, 120);
+    const currentToken = speakingSequence[speakingSequenceIndex] || VISEME_PAUSE;
+    if (currentToken === VISEME_PAUSE) {
+      drawFrame(getPauseFrameKey());
+    } else {
+      drawFrame(currentToken);
+    }
+    speakingSequenceIndex = (speakingSequenceIndex + 1) % speakingSequence.length;
+  }, 95);
+}
+
+function stopIdleAnimation() {
+  if (idleAnimationTimer) {
+    window.clearInterval(idleAnimationTimer);
+    idleAnimationTimer = null;
+  }
+}
+
+function startIdleAnimation() {
+  stopIdleAnimation();
+  if (!rendererReady) {
+    return;
+  }
+  if (!frameSurfaces.has(IDLE_SMILE_FRAME_KEY)) {
+    drawFrame(IDLE_MAIN_FRAME_KEY);
+    return;
+  }
+  idleUseSmileFrame = false;
+  drawFrame(IDLE_MAIN_FRAME_KEY);
+  idleAnimationTimer = window.setInterval(() => {
+    idleUseSmileFrame = !idleUseSmileFrame;
+    drawFrame(idleUseSmileFrame ? IDLE_SMILE_FRAME_KEY : IDLE_MAIN_FRAME_KEY);
+  }, 2200);
 }
 
 function stopWorkingAnimation() {
@@ -348,6 +450,7 @@ function stopWorkingAnimation() {
 function startWorkingAnimation() {
   stopWorkingAnimation();
   if (!rendererReady || availableWorkFrameKeys.length === 0) {
+    drawFrame(IDLE_MAIN_FRAME_KEY);
     return;
   }
   workingFrameIndex = 0;
@@ -355,7 +458,7 @@ function startWorkingAnimation() {
   workingAnimationTimer = window.setInterval(() => {
     drawFrame(availableWorkFrameKeys[workingFrameIndex]);
     workingFrameIndex = (workingFrameIndex + 1) % availableWorkFrameKeys.length;
-  }, 400);
+  }, 320);
 }
 
 function updateDashboard(panels) {
@@ -399,13 +502,16 @@ function setState(state) {
   voiceButton.classList.remove("idle", "listening", "thinking", "speaking");
   voiceButton.classList.add(state);
   stopWorkingAnimation();
+  stopSpeakingAnimation();
+  stopIdleAnimation();
   if (state === "speaking") {
     startSpeakingAnimation();
   } else if (state === "thinking") {
-    stopSpeakingAnimation();
     startWorkingAnimation();
+  } else if (state === "listening") {
+    drawFrame(frameSurfaces.has(IDLE_SMILE_FRAME_KEY) ? IDLE_SMILE_FRAME_KEY : IDLE_MAIN_FRAME_KEY);
   } else {
-    stopSpeakingAnimation();
+    startIdleAnimation();
   }
 }
 
@@ -423,7 +529,10 @@ function stopPlayback() {
   if ("speechSynthesis" in window) {
     window.speechSynthesis.cancel();
   }
+  stopWorkingAnimation();
+  stopIdleAnimation();
   stopSpeakingAnimation();
+  drawFrame(IDLE_MAIN_FRAME_KEY);
   activeTurnMetrics = null;
 }
 
