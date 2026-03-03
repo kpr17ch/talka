@@ -844,6 +844,20 @@ async function sendTurn(blob) {
     currentPendingTurnId = startPayload.turn_id;
     setState("thinking");
     stopAckPlayback();
+    const ackText = (startPayload.ack_text || "").trim();
+    if (startPayload.ack_audio_base64) {
+      playAckAudioFromBase64(startPayload.ack_audio_base64, startPayload.ack_audio_mime)
+        .catch(() => false)
+        .then((ok) => {
+          if (!ok && ackText) {
+            return playAckSpeech(ackText);
+          }
+          return false;
+        })
+        .catch(() => false);
+    } else if (ackText) {
+      playAckSpeech(ackText).catch(() => false);
+    }
 
     const wsResult = await waitForTurnResultWs(startPayload.turn_id);
     currentPendingTurnId = null;

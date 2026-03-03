@@ -98,11 +98,18 @@ Erfolgsresponse:
 - `turn_id`
 - `conversation_id`
 - `user_text`
-- `ack_text` (derzeit leer, ACK deaktiviert)
-- `ack_audio_base64` (derzeit `null`, ACK deaktiviert)
-- `ack_audio_mime` (derzeit `null`, ACK deaktiviert)
+- `ack_text` (bei laengeren Tasks kurze Bestaetigung; bei kurzen Tasks optional leer)
+- `ack_audio_base64` (optional, wenn `TURN_ACK_TTS_ENABLED=true`)
+- `ack_audio_mime` (optional, wenn `TURN_ACK_TTS_ENABLED=true`)
 - `status` (`processing`)
 - `poll_after_ms`
+
+ACK-Steuerung per Env:
+
+- `TURN_ACK_MODE=auto|always|off` (default `auto`)
+- `TURN_ACK_AUTO_MIN_CHARS` / `TURN_ACK_AUTO_MIN_WORDS` (Schwellen fuer `auto`)
+- `TURN_ACK_TEXT` (optional fixer ACK-Text)
+- `TURN_ACK_TTS_ENABLED=true|false` (Server-TTS fuer ACK; sonst Browser-Stimme)
 
 ### `POST /api/voice/wake/turn/start`
 
