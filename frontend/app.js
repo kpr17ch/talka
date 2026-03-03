@@ -28,6 +28,10 @@ const FRAME_SOURCES = {
 };
 const SPEAK_FRAME_KEYS = ["speakAE", "speakLTSCH", "speakO", "speakPMN"];
 const WORK_FRAME_KEYS = ["work0", "work1", "work2", "work3"];
+const WORK_TRANSITION_FRAME_KEY = "work3";
+const WORK_TYPING_FRAME_KEYS = ["work0", "work1", "work2"];
+const WORK_TRANSITION_MS = 180;
+const WORK_TYPING_INTERVAL_MS = 145;
 const RICK_CHROMA_KEY_PATTERN = /\/assets\/character\/rick_/;
 const CHROMA_KEY_MIN_GREEN = 78;
 const CHROMA_KEY_MIN_DOMINANCE = 18;
@@ -72,6 +76,7 @@ const frameSurfaces = new Map();
 let availableSpeakFrameKeys = [];
 let activeTurnMetrics = null;
 let workingAnimationTimer = null;
+let workingTransitionTimer = null;
 let workingFrameIndex = 0;
 let availableWorkFrameKeys = [];
 let currentTurnWs = null;
@@ -510,6 +515,10 @@ function startIdleAnimation() {
 }
 
 function stopWorkingAnimation() {
+  if (workingTransitionTimer) {
+    window.clearTimeout(workingTransitionTimer);
+    workingTransitionTimer = null;
+  }
   if (workingAnimationTimer) {
     window.clearInterval(workingAnimationTimer);
     workingAnimationTimer = null;
@@ -522,12 +531,35 @@ function startWorkingAnimation() {
     drawFrame(IDLE_MAIN_FRAME_KEY);
     return;
   }
-  workingFrameIndex = 0;
-  drawFrame(availableWorkFrameKeys[0]);
-  workingAnimationTimer = window.setInterval(() => {
-    drawFrame(availableWorkFrameKeys[workingFrameIndex]);
-    workingFrameIndex = (workingFrameIndex + 1) % availableWorkFrameKeys.length;
-  }, 320);
+  const typingFrames = WORK_TYPING_FRAME_KEYS.filter((frameKey) => frameSurfaces.has(frameKey));
+  const fallbackFrames = availableWorkFrameKeys.filter((frameKey) => frameKey !== WORK_TRANSITION_FRAME_KEY);
+  const loopFrames = typingFrames.length > 0 ? typingFrames : fallbackFrames;
+  const transitionFrame = frameSurfaces.has(WORK_TRANSITION_FRAME_KEY) ? WORK_TRANSITION_FRAME_KEY : null;
+
+  if (loopFrames.length === 0) {
+    drawFrame(transitionFrame || IDLE_MAIN_FRAME_KEY);
+    return;
+  }
+
+  const startTypingLoop = () => {
+    workingFrameIndex = 0;
+    drawFrame(loopFrames[0]);
+    workingAnimationTimer = window.setInterval(() => {
+      drawFrame(loopFrames[workingFrameIndex]);
+      workingFrameIndex = (workingFrameIndex + 1) % loopFrames.length;
+    }, WORK_TYPING_INTERVAL_MS);
+  };
+
+  if (transitionFrame) {
+    drawFrame(transitionFrame);
+    workingTransitionTimer = window.setTimeout(() => {
+      workingTransitionTimer = null;
+      startTypingLoop();
+    }, WORK_TRANSITION_MS);
+    return;
+  }
+
+  startTypingLoop();
 }
 
 function updateDashboard(panels) {
