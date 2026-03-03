@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TARGET_HOST="${TARGET_HOST:-hetzner}"
+TARGET_DIR="${TARGET_DIR:-/opt/voice-bridge}"
+BRANCH="${BRANCH:-main}"
+
+echo "[deploy-hetzner] host=${TARGET_HOST} dir=${TARGET_DIR} branch=${BRANCH}"
+ssh "${TARGET_HOST}" "cd '${TARGET_DIR}' && BRANCH='${BRANCH}' ./deploy/scripts/voice-bridge-pull-deploy"

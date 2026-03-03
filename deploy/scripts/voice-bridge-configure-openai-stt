@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENV_FILE=${ENV_FILE:-/etc/voice-bridge.env}
+SECRET_FILE=${SECRET_FILE:-/etc/voice-bridge.secrets}
+SERVICE_NAME=${SERVICE_NAME:-voice-bridge.service}
+
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "Missing env file: $ENV_FILE" >&2
+  exit 1
+fi
+
+KEY="${1:-}"
+if [[ -z "$KEY" ]]; then
+  read -r -s -p "OpenAI API key: " KEY
+  echo
+fi
+
+if [[ -z "$KEY" ]]; then
+  echo "OpenAI key is empty." >&2
+  exit 1
+fi
+
+if [[ "$KEY" != sk-* ]]; then
+  echo "Warning: key does not start with sk-. Continuing anyway." >&2
+fi
+
+umask 077
+cat > "$SECRET_FILE" <<SECRETS
+OPENAI_API_KEY=$KEY
+SECRETS
+chmod 600 "$SECRET_FILE"
+
+if grep -q '^STT_PROVIDER=' "$ENV_FILE"; then
+  sed -i 's/^STT_PROVIDER=.*/STT_PROVIDER=openai/' "$ENV_FILE"
+else
+  echo 'STT_PROVIDER=openai' >> "$ENV_FILE"
+fi
+
+if grep -q '^OPENAI_STT_MODEL=' "$ENV_FILE"; then
+  sed -i 's/^OPENAI_STT_MODEL=.*/OPENAI_STT_MODEL=gpt-4o-transcribe/' "$ENV_FILE"
+else
+  echo 'OPENAI_STT_MODEL=gpt-4o-transcribe' >> "$ENV_FILE"
+fi
+
+if grep -q '^OPENAI_BASE_URL=' "$ENV_FILE"; then
+  sed -i 's#^OPENAI_BASE_URL=.*#OPENAI_BASE_URL=https://api.openai.com/v1#' "$ENV_FILE"
+else
+  echo 'OPENAI_BASE_URL=https://api.openai.com/v1' >> "$ENV_FILE"
+fi
+
+systemctl daemon-reload
+systemctl restart "$SERVICE_NAME"
+systemctl is-active "$SERVICE_NAME" >/dev/null
+
+echo "OpenAI STT enabled."
+echo "Provider: $(grep '^STT_PROVIDER=' "$ENV_FILE" | cut -d= -f2-)"
+echo "Model:    $(grep '^OPENAI_STT_MODEL=' "$ENV_FILE" | cut -d= -f2-)"

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice Bridge</title>
+    <link rel="preload" as="image" href="/assets/character/l_base.png" fetchpriority="high" />
+    <link rel="preload" as="image" href="/assets/character/l_speak_aei.png" />
+    <link rel="preload" as="image" href="/assets/character/l_speak_e.png" />
+    <link rel="preload" as="image" href="/assets/character/l_speak_jchsh.png" />
+    <link rel="preload" as="image" href="/assets/character/l_speak_l.png" />
+    <link rel="preload" as="image" href="/assets/character/l_speak_o.png" />
+    <link rel="preload" as="image" href="/assets/character/l_speak_ts.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="character-stage" aria-label="AI Character">
+        <img
+          id="characterFallback"
+          class="character-fallback"
+          src="/assets/character/l_base.png"
+          alt="AI Character"
+          loading="eager"
+          decoding="async"
+        />
+        <canvas id="characterCanvas" class="character-canvas" aria-hidden="true"></canvas>
+      </section>
+
+      <div class="button-wrap">
+        <button id="voiceButton" class="voice-btn idle" type="button" aria-label="Voice Aufnahme starten oder stoppen">
+          <span class="voice-core"></span>
+        </button>
+        <div id="stateLabel" class="sr-only" aria-live="polite">idle</div>
+      </div>
+      <p id="errorText" class="error" hidden></p>
+      <audio id="audioPlayer" preload="none"></audio>
+
+      <section id="dashboard" class="dashboard" hidden>
+        <div id="currentTask" class="panel">
+          <h3 class="panel-title">Aktuelle Aufgabe</h3>
+          <div class="panel-content"></div>
+        </div>
+        <div id="pinboard" class="panel">
+          <h3 class="panel-title">Pinwand</h3>
+          <div class="panel-content"></div>
+        </div>
+        <div id="workNotes" class="panel">
+          <h3 class="panel-title">Notizen</h3>
+          <div class="panel-content"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
