@@ -8,6 +8,30 @@ This project is operated with a strict flow:
 4. Pull on Hetzner in `/opt/voice-bridge`.
 5. Restart `voice-bridge.service`.
 
+## Non-Negotiable Deployment Contract
+
+- Source of truth is always local git + GitHub, never ad-hoc server edits.
+- Deploy target is always Hetzner path `/opt/voice-bridge` on branch `main`.
+- Standard deploy entrypoint is always:
+
+```bash
+cd ~/Projects/Private/talka
+./deploy/scripts/deploy-hetzner
+```
+
+- Manual fallback (only if needed) is:
+
+```bash
+ssh hetzner 'cd /opt/voice-bridge && BRANCH=main ./deploy/scripts/voice-bridge-pull-deploy'
+```
+
+- Mandatory verification after deploy:
+
+```bash
+ssh hetzner 'systemctl is-active voice-bridge.service'
+ssh hetzner 'curl -fsS http://127.0.0.1:8089/api/health'
+```
+
 ## Daily Commands
 
 ```bash
