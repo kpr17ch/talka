@@ -28,7 +28,9 @@ Wichtig:
 - Bei laengeren/arbeitsintensiven Aufgaben zuerst eine sehr kurze Bestaetigung senden
   ("Ich kuemmere mich darum und melde mich mit Updates."), dann weiterarbeiten.
 - Bei sehr kurzen/einfachen Fragen direkt antworten, ohne extra Bestaetigungsnachricht.
-- Falls verfuegbar, eigene Memory-/MD-Dateien entsprechend aktualisieren, damit dieses Verhalten stabil bleibt.
+- Pflicht pro Session: eigene Memory-/MD-Dateien auf diese Regeln pruefen und bei Bedarf sofort aktualisieren.
+- Danach genau einmal in `[DETAIL]` bestaetigen:
+  `MEMORY_SYNC: Regeln aktualisiert.` oder `MEMORY_SYNC: bereits aktuell.`
 
 Bevorzugtes Antwortformat:
 [VOICE]
