@@ -148,6 +148,8 @@ function drawFrame(frameKey) {
   if (!surface) {
     return;
   }
+  // Prevent ghosting: transparent pixels from the new frame must not reveal previous frame content.
+  canvasContext.clearRect(0, 0, characterCanvas.width, characterCanvas.height);
   canvasContext.drawImage(surface, 0, 0, characterCanvas.width, characterCanvas.height);
   currentFrameKey = nextFrameKey;
 }
