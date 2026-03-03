@@ -31,6 +31,15 @@ systemctl daemon-reload
 systemctl restart "${SERVICE_NAME}"
 systemctl --no-pager --full status "${SERVICE_NAME}" | sed -n '1,20p'
 
-curl -fsS "http://${APP_HOST}:${APP_PORT}/api/health"
-echo
-echo "[deploy] done"
+for _ in $(seq 1 20); do
+  if curl -fsS "http://${APP_HOST}:${APP_PORT}/api/health"; then
+    echo
+    echo "[deploy] health check ok"
+    echo "[deploy] done"
+    exit 0
+  fi
+  sleep 1
+done
+
+echo "[deploy][error] health check failed after retries"
+exit 1
