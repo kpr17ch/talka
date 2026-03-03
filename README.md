@@ -110,6 +110,12 @@ ACK-Steuerung per Env:
 - `TURN_ACK_AUTO_MIN_CHARS` / `TURN_ACK_AUTO_MIN_WORDS` (Schwellen fuer `auto`)
 - `TURN_ACK_TEXT` (optional fixer ACK-Text)
 - `TURN_ACK_TTS_ENABLED=true|false` (Server-TTS fuer ACK; sonst Browser-Stimme)
+- `TURN_ACK_SEND_TO_TELEGRAM=true|false` (separates Sofort-ACK in Telegram)
+- `TURN_ACK_TELEGRAM_TIMEOUT_SECONDS` (Timeout fuer separates Telegram-ACK)
+
+Hinweis zum Flow:
+- Bei aktivem Telegram-ACK wird die kurze Bestaetigung separat sofort gesendet.
+- Der eigentliche OpenClaw-Lauf wird danach gestartet und soll die Start-Bestaetigung nicht erneut wiederholen.
 
 ### `POST /api/voice/wake/turn/start`
 

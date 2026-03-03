@@ -101,23 +101,31 @@ class OpenClawClient:
         grace = max(1, self.settings.openclaw_process_grace_seconds)
         return max(1, timeout_seconds) + grace
 
-    def mirror_user_text(self, user_text: str) -> bool:
-        target = (self.settings.user_text_mirror_target or self.settings.openclaw_to).strip()
+    def _send_message(
+        self,
+        *,
+        channel: str,
+        target: str,
+        message: str,
+        timeout_seconds: int,
+        context_label: str,
+    ) -> bool:
         if not target:
-            raise OpenClawNonZeroExit("USER_TEXT_MIRROR_TARGET/OPENCLAW_TO is empty", 2)
-
-        message = self._build_user_mirror_message(user_text)
+            raise OpenClawNonZeroExit(f"{context_label} target is empty", 2)
+        text = " ".join((message or "").split())
+        if not text:
+            return False
         args = [
             self.settings.openclaw_bin,
             "message",
             "send",
             "--json",
             "--channel",
-            self.settings.user_text_mirror_channel,
+            channel,
             "--target",
             target,
             "--message",
-            message,
+            text,
         ]
 
         try:
@@ -125,22 +133,40 @@ class OpenClawClient:
                 args,
                 capture_output=True,
                 text=True,
-                timeout=self._process_timeout(self.settings.user_text_mirror_timeout_seconds),
+                timeout=self._process_timeout(timeout_seconds),
                 check=False,
             )
         except FileNotFoundError as exc:
             raise OpenClawBinaryNotFound(f"OpenClaw binary not found: {self.settings.openclaw_bin}") from exc
         except subprocess.TimeoutExpired as exc:
-            raise OpenClawTimeout(
-                f"OpenClaw mirror timeout after {self.settings.user_text_mirror_timeout_seconds}s"
-            ) from exc
+            raise OpenClawTimeout(f"{context_label} timeout after {timeout_seconds}s") from exc
 
         if proc.returncode != 0:
             stderr = (proc.stderr or "").strip()
             stdout = (proc.stdout or "").strip()
-            message = stderr or stdout or "OpenClaw mirror exited with non-zero code"
-            raise OpenClawNonZeroExit(message, proc.returncode)
+            error_message = stderr or stdout or f"{context_label} exited with non-zero code"
+            raise OpenClawNonZeroExit(error_message, proc.returncode)
         return True
+
+    def mirror_user_text(self, user_text: str) -> bool:
+        target = (self.settings.user_text_mirror_target or self.settings.openclaw_to).strip()
+        message = self._build_user_mirror_message(user_text)
+        return self._send_message(
+            channel=self.settings.user_text_mirror_channel,
+            target=target,
+            message=message,
+            timeout_seconds=self.settings.user_text_mirror_timeout_seconds,
+            context_label="OpenClaw mirror",
+        )
+
+    def send_assistant_ack(self, ack_text: str) -> bool:
+        return self._send_message(
+            channel=self.settings.openclaw_channel,
+            target=self.settings.openclaw_to.strip(),
+            message=ack_text,
+            timeout_seconds=self.settings.turn_ack_telegram_timeout_seconds,
+            context_label="OpenClaw ACK send",
+        )
 
     def _build_user_mirror_message(self, user_text: str) -> str:
         text = " ".join(user_text.strip().split())
@@ -152,8 +178,14 @@ class OpenClawClient:
             text = text[: max_chars - 4].rstrip() + " ..."
         return text
 
-    def _build_agent_message(self, user_text: str) -> str:
+    def _build_agent_message(self, user_text: str, *, ack_already_sent: bool = False) -> str:
         text = user_text.strip()
+        if ack_already_sent:
+            text = (
+                f"{text}\n\n"
+                "Systemhinweis: Die initiale Start-Bestaetigung wurde bereits separat gesendet. "
+                "Wiederhole keine Start-Bestaetigung und starte direkt mit dem inhaltlichen Update."
+            )
         if not self.settings.openclaw_role_prompt_enabled:
             return text
         return f"{OPENCLAW_ROLE_PROMPT}\n\nNutzeranfrage:\n{text}"
@@ -162,6 +194,7 @@ class OpenClawClient:
         self,
         user_text: str,
         conversation_id: str | None = None,
+        ack_already_sent: bool = False,
         should_cancel: Callable[[], bool] | None = None,
     ) -> OpenClawResult:
         args = [
@@ -170,7 +203,7 @@ class OpenClawClient:
             "--json",
             "--deliver",
             "--message",
-            self._build_agent_message(user_text),
+            self._build_agent_message(user_text, ack_already_sent=ack_already_sent),
             "--timeout",
             str(self.settings.openclaw_timeout_seconds),
         ]

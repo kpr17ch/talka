@@ -439,7 +439,8 @@ def _enqueue_async_turn(
     conversation_out: str,
     conversation_id: str | None,
     user_text: str,
-) -> VoiceTurnStartResponse:
+    ) -> VoiceTurnStartResponse:
+    ack_text = build_turn_ack_text(user_text=user_text, settings=settings)
     user_text_mirror_attempted = False
     user_text_mirror_sent: bool | None = None
     if settings.mirror_user_text_to_telegram:
@@ -461,6 +462,7 @@ def _enqueue_async_turn(
         initial_timings=dict(timings),
         user_text_mirror_attempted=user_text_mirror_attempted,
         user_text_mirror_sent=user_text_mirror_sent,
+        ack_text=ack_text,
     )
 
     timings["total"] = _elapsed_ms(started)
@@ -481,7 +483,6 @@ def _enqueue_async_turn(
         },
     )
 
-    ack_text = build_turn_ack_text(user_text=user_text, settings=settings)
     ack_audio_b64 = None
     ack_audio_mime = None
     if ack_text and settings.turn_ack_tts_enabled:
@@ -558,6 +559,7 @@ def _run_turn_pipeline(
     started: float,
     user_text_mirror_attempted: bool,
     user_text_mirror_sent: bool | None,
+    ack_already_sent: bool = False,
     should_cancel: Callable[[], bool] | None = None,
     on_stage: Callable[[str, str], None] | None = None,
 ) -> VoiceTurnResponse:
@@ -570,6 +572,7 @@ def _run_turn_pipeline(
     oc_result = openclaw_client.ask(
         user_text=user_text,
         conversation_id=conversation_id,
+        ack_already_sent=ack_already_sent,
         should_cancel=should_cancel,
     )
     timings["openclaw"] = _elapsed_ms(openclaw_start)
@@ -677,6 +680,7 @@ def _run_async_turn_job(
     initial_timings: dict[str, int],
     user_text_mirror_attempted: bool,
     user_text_mirror_sent: bool | None,
+    ack_text: str,
 ) -> None:
     started = perf_counter() - ((initial_timings.get("request_prep", 0) + initial_timings.get("stt", 0)) / 1000)
     timings = _new_timings()
@@ -692,6 +696,34 @@ def _run_async_turn_job(
     try:
         if should_cancel():
             raise OpenClawCancelled("Turn cancelled")
+
+        ack_sent_to_telegram = False
+        if ack_text and settings.turn_ack_send_to_telegram:
+            try:
+                ack_sent_to_telegram = openclaw_client.send_assistant_ack(ack_text)
+                if ack_sent_to_telegram:
+                    logger.info(
+                        "turn_ack_sent",
+                        extra={
+                            "extra": {
+                                "turn_id": turn_id,
+                                "conversation_id": conversation_out,
+                                "ack_text_len": len(ack_text),
+                            }
+                        },
+                    )
+            except OpenClawError as exc:
+                logger.warning(
+                    "turn_ack_send_failed",
+                    extra={
+                        "extra": {
+                            "turn_id": turn_id,
+                            "conversation_id": conversation_out,
+                            "error": str(exc),
+                        }
+                    },
+                )
+
         _set_turn_job_progress(turn_id=turn_id, stage="agent", message="Ich arbeite an der Antwort.")
         _push_to_turn_queue(turn_id, WsTurnProgress(
             turn_id=turn_id, stage="agent", message="Ich arbeite an der Antwort.",
@@ -705,6 +737,7 @@ def _run_async_turn_job(
             started=started,
             user_text_mirror_attempted=user_text_mirror_attempted,
             user_text_mirror_sent=user_text_mirror_sent,
+            ack_already_sent=ack_sent_to_telegram,
             should_cancel=should_cancel,
             on_stage=_on_stage,
         )

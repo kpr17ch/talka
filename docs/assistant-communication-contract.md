@@ -77,6 +77,8 @@ Der LLM-Orchestrator antwortet als JSON mit:
 - Waehrenddessen bleibt die Thinking-Sequenz aktiv.
 - Danach folgen finale Antwort und optional weitere Zwischenupdates.
 - Bei kurzen, direkten Fragen kann ACK entfallen und die finale Antwort direkt kommen.
+- Telegram-Flow: Das Start-ACK wird separat sofort gesendet, bevor der lange OpenClaw-Run startet.
+- Der nachfolgende OpenClaw-Run soll die Start-Bestaetigung nicht wiederholen.
 
 ## Beispiele
 
