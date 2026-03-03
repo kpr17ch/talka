@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     turn_ack_auto_min_chars: int = Field(default=120, alias="TURN_ACK_AUTO_MIN_CHARS")
     turn_ack_auto_min_words: int = Field(default=20, alias="TURN_ACK_AUTO_MIN_WORDS")
     turn_ack_tts_enabled: bool = Field(default=False, alias="TURN_ACK_TTS_ENABLED")
+    turn_ack_send_to_telegram: bool = Field(default=True, alias="TURN_ACK_SEND_TO_TELEGRAM")
+    turn_ack_telegram_timeout_seconds: int = Field(default=20, alias="TURN_ACK_TELEGRAM_TIMEOUT_SECONDS")
     wake_phrase: str = Field(default="hey al", alias="WAKE_PHRASE")
     wake_phrase_similarity_threshold: float = Field(
         default=0.8, alias="WAKE_PHRASE_SIMILARITY_THRESHOLD"

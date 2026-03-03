@@ -35,10 +35,21 @@ def test_build_agent_message_includes_role_prompt_by_default():
     assert "MEMORY_SYNC" in msg
 
 
+def test_build_agent_message_marks_ack_as_already_sent():
+    settings = Settings()
+    client = OpenClawClient(settings)
+
+    msg = client._build_agent_message("Bitte recherchiere kurz", ack_already_sent=True)
+
+    assert "Systemhinweis: Die initiale Start-Bestaetigung wurde bereits separat gesendet." in msg
+    assert "Wiederhole keine Start-Bestaetigung" in msg
+
+
 def test_build_agent_message_can_disable_role_prompt():
     settings = Settings(OPENCLAW_ROLE_PROMPT_ENABLED=False)
     client = OpenClawClient(settings)
 
-    msg = client._build_agent_message("Kurze Antwort")
+    msg = client._build_agent_message("Kurze Antwort", ack_already_sent=True)
 
-    assert msg == "Kurze Antwort"
+    assert "Kurze Antwort" in msg
+    assert "Wiederhole keine Start-Bestaetigung" in msg
