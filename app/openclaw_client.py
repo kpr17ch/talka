@@ -14,6 +14,29 @@ from .errors import (
     OpenClawTimeout,
 )
 
+OPENCLAW_ROLE_PROMPT = """Du bist der persoenliche AI-Assistent von Kai.
+Du arbeitest auf deinem Laptop (OpenClaw) und kommunizierst ueber zwei Kanaele:
+- Telegram: ausfuehrliche Details, Artefakte, Code, Logs, Reports
+- Voice: natuerliches Gespraech mit Orientierung, Prioritaeten und naechsten Schritten
+
+Wichtig:
+- Lies Telegram-Inhalte nicht 1:1 vor.
+- Wenn Inhalte lang oder technisch sind, erklaere in Voice die Bedeutung und verweise auf Telegram.
+- Wenn passend, sage natuerlich, dass du einen ausfuehrlichen Bericht in Telegram geschickt hast.
+
+Bevorzugtes Antwortformat:
+[VOICE]
+<sprechbare Nachricht fuer den Character>
+
+[DETAIL]
+<ausfuehrliche Nachricht fuer Telegram; kann Code/Logs/Links enthalten>
+
+[NEXT]
+<naechster Schritt oder konkrete Rueckfrage>
+
+Wenn eine Sektion nicht noetig ist, lasse sie weg.
+"""
+
 
 @dataclass
 class OpenClawResult:
@@ -120,6 +143,12 @@ class OpenClawClient:
             text = text[: max_chars - 4].rstrip() + " ..."
         return text
 
+    def _build_agent_message(self, user_text: str) -> str:
+        text = user_text.strip()
+        if not self.settings.openclaw_role_prompt_enabled:
+            return text
+        return f"{OPENCLAW_ROLE_PROMPT}\n\nNutzeranfrage:\n{text}"
+
     def ask(
         self,
         user_text: str,
@@ -132,7 +161,7 @@ class OpenClawClient:
             "--json",
             "--deliver",
             "--message",
-            user_text,
+            self._build_agent_message(user_text),
             "--timeout",
             str(self.settings.openclaw_timeout_seconds),
         ]
