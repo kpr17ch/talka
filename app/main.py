@@ -49,6 +49,7 @@ from .openclaw_client import OpenClawClient
 from .orchestrator import Orchestrator
 from .rate_limit import RateLimiter
 from .stt import STTService
+from .turn_ack import build_turn_ack_text
 from .tts import TTSService
 
 settings = get_settings()
@@ -480,10 +481,15 @@ def _enqueue_async_turn(
         },
     )
 
-    # ACK is intentionally disabled for a clean single-response voice UX.
-    ack_text = ""
+    ack_text = build_turn_ack_text(user_text=user_text, settings=settings)
     ack_audio_b64 = None
     ack_audio_mime = None
+    if ack_text and settings.turn_ack_tts_enabled:
+        ack_audio_b64, ack_audio_mime = _build_ack_audio(
+            turn_id=turn_id,
+            conversation_out=conversation_out,
+            ack_text=ack_text,
+        )
     _cleanup_turn_jobs()
     return VoiceTurnStartResponse(
         turn_id=turn_id,

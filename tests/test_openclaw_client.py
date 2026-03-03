@@ -30,6 +30,7 @@ def test_build_agent_message_includes_role_prompt_by_default():
     assert "Nutzeranfrage" in msg
     assert "Bitte pruefe die letzten Logs" in msg
     assert "nur Plain Text" in msg
+    assert "sehr kurze Bestaetigung" in msg
 
 
 def test_build_agent_message_can_disable_role_prompt():

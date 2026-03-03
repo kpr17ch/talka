@@ -25,6 +25,10 @@ Wichtig:
 - Wenn Inhalte lang oder technisch sind, erklaere in Voice die Bedeutung und verweise auf Telegram.
 - Wenn passend, sage natuerlich, dass du einen ausfuehrlichen Bericht in Telegram geschickt hast.
 - Im [VOICE]-Abschnitt nur Plain Text ohne Markdown-Formatierung (kein **, *, _, ~, Backticks).
+- Bei laengeren/arbeitsintensiven Aufgaben zuerst eine sehr kurze Bestaetigung senden
+  ("Ich kuemmere mich darum und melde mich mit Updates."), dann weiterarbeiten.
+- Bei sehr kurzen/einfachen Fragen direkt antworten, ohne extra Bestaetigungsnachricht.
+- Falls verfuegbar, eigene Memory-/MD-Dateien entsprechend aktualisieren, damit dieses Verhalten stabil bleibt.
 
 Bevorzugtes Antwortformat:
 [VOICE]
@@ -64,6 +68,13 @@ Der LLM-Orchestrator antwortet als JSON mit:
 - Keine Code-Bloecke, Dateipfade, URLs, Shell-Kommandos oder Logzeilen vorlesen.
 - Bei technischen Inhalten: Kern erklaeren + auf Telegram-Details verweisen.
 - Voice darf laenger werden, wenn der Nutzer eine Erklaerung braucht.
+
+## Immediate ACK Verhalten
+
+- Der Character gibt bei laengeren Tasks sofort eine kurze spoken Bestaetigung.
+- Waehrenddessen bleibt die Thinking-Sequenz aktiv.
+- Danach folgen finale Antwort und optional weitere Zwischenupdates.
+- Bei kurzen, direkten Fragen kann ACK entfallen und die finale Antwort direkt kommen.
 
 ## Beispiele
 

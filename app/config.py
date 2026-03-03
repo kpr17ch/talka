@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     turn_job_max_entries: int = Field(default=500, alias="TURN_JOB_MAX_ENTRIES")
     turn_poll_after_ms: int = Field(default=1200, alias="TURN_POLL_AFTER_MS")
     turn_ack_text: str = Field(default="", alias="TURN_ACK_TEXT")
+    turn_ack_mode: Literal["off", "auto", "always"] = Field(default="auto", alias="TURN_ACK_MODE")
+    turn_ack_auto_min_chars: int = Field(default=120, alias="TURN_ACK_AUTO_MIN_CHARS")
+    turn_ack_auto_min_words: int = Field(default=20, alias="TURN_ACK_AUTO_MIN_WORDS")
+    turn_ack_tts_enabled: bool = Field(default=False, alias="TURN_ACK_TTS_ENABLED")
     wake_phrase: str = Field(default="hey al", alias="WAKE_PHRASE")
     wake_phrase_similarity_threshold: float = Field(
         default=0.8, alias="WAKE_PHRASE_SIMILARITY_THRESHOLD"
