@@ -19,6 +19,20 @@ git push origin main
 ./deploy/scripts/deploy-hetzner
 ```
 
+## One-time Server Bootstrap
+
+```bash
+cd ~/Projects/Private/talka
+REPO_SSH_URL=git@github.com:<owner>/talka.git ./deploy/scripts/bootstrap-hetzner-repo
+```
+
+This command:
+- backs up existing `/opt/voice-bridge` if it is not a git repo
+- clones from GitHub
+- pulls `main`
+- installs dependencies
+- restarts `voice-bridge.service`
+
 ## What `deploy-hetzner` does
 
 - SSH to host `hetzner`

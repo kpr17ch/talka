@@ -222,6 +222,12 @@ git push origin main
 
 Details: `docs/git-deploy-workflow.md`
 
+Einmaliger Server-Bootstrap (falls `/opt/voice-bridge` noch kein Git-Repo ist):
+
+```bash
+REPO_SSH_URL=git@github.com:<owner>/talka.git ./deploy/scripts/bootstrap-hetzner-repo
+```
+
 ## Systemd
 
 Unit: [`deploy/systemd/voice-bridge.service`](deploy/systemd/voice-bridge.service)
