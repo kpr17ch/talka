@@ -8,10 +8,13 @@ Voice-Bridge-Prototyp fuer OpenClaw + Telegram Mirror:
 - Optionales Spiegeln von Nutzer-Transkript nach Telegram (`openclaw message send`, parallel zum Agent-Call)
 - Text-Orchestrator (`raw_text -> speak_text`)
   - bevorzugt vorhandene `VOICE`/`VOICE_SUMMARY` Bloecke aus Agent-Antworten
-  - filtert Code/Pfade/URLs fuer Voice
-  - haengt optional Detail-Hinweis an (`... Details in Telegram`)
+  - trennt Voice-Gespraech und Telegram-Details dynamisch (kein starres Satzlimit)
+  - filtert Code/Pfade/URLs fuer Voice und erklaert stattdessen Bedeutung/naechsten Schritt
+  - ergaenzt bei technischen Inhalten optional einen natuerlichen Telegram-Verweis
 - ElevenLabs TTS (mp3 base64)
 - Sehr simples Frontend (weiße Seite + runder Voice-Button)
+
+Kommunikations-Contract (Voice + Telegram): `docs/assistant-communication-contract.md`
 
 ## Architektur
 

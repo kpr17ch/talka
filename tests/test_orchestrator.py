@@ -54,7 +54,6 @@ def test_technical_details_append_telegram_hint():
     settings = Settings(
         ORCHESTRATOR_MODE="rules",
         ORCHESTRATOR_VOICE_DETAIL_HINT=True,
-        ORCHESTRATOR_VOICE_MAX_SENTENCES=4,
     )
     orch = Orchestrator(settings)
     raw = "Fix ist fertig. Code liegt in /opt/voice-bridge/app/main.py und Command ist systemctl restart voice-bridge."
@@ -62,13 +61,12 @@ def test_technical_details_append_telegram_hint():
     assert "Telegram" in out
 
 
-def test_sentence_limit_applied():
+def test_no_sentence_limit_applied():
     settings = Settings(
         ORCHESTRATOR_MODE="rules",
-        ORCHESTRATOR_VOICE_MAX_SENTENCES=2,
         ORCHESTRATOR_VOICE_DETAIL_HINT=False,
     )
     orch = Orchestrator(settings)
     raw = "Satz eins. Satz zwei. Satz drei. Satz vier."
     out = orch.to_speakable(raw)
-    assert out == "Satz eins. Satz zwei."
+    assert out == "Satz eins. Satz zwei. Satz drei. Satz vier."

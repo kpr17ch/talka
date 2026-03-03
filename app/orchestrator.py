@@ -91,29 +91,21 @@ class Orchestrator:
         cleaned = " ".join((text or "").split())
         if not cleaned:
             if has_technical_details and self.settings.orchestrator_voice_detail_hint:
-                return "Ich habe das fuer dich vorbereitet. Die technischen Details habe ich dir in Telegram geschickt."
+                return (
+                    "Ich habe das fuer dich vorbereitet. "
+                    "Den detaillierten Bericht habe ich dir in Telegram geschickt."
+                )
             return "Ich habe eine Antwort fuer dich vorbereitet."
 
-        cleaned = self._limit_sentences(cleaned, max_sentences=max(1, self.settings.orchestrator_voice_max_sentences))
         if has_technical_details and self.settings.orchestrator_voice_detail_hint:
             lower = cleaned.lower()
             if "telegram" not in lower and "details" not in lower:
-                cleaned = f"{cleaned} Die technischen Details habe ich dir in Telegram geschickt."
+                cleaned = f"{cleaned} Den detaillierten Bericht habe ich dir in Telegram geschickt."
 
         max_chars = max(0, self.settings.orchestrator_max_speak_chars)
         if max_chars and len(cleaned) > max_chars:
             cleaned = self._truncate(cleaned, max_chars)
         return cleaned
-
-    @staticmethod
-    def _limit_sentences(text: str, *, max_sentences: int) -> str:
-        if max_sentences <= 0:
-            return text
-        parts = re.split(r"(?<=[.!?])\s+", text.strip())
-        parts = [part.strip() for part in parts if part.strip()]
-        if len(parts) <= max_sentences:
-            return text.strip()
-        return " ".join(parts[:max_sentences]).strip()
 
     @staticmethod
     def _truncate(text: str, max_chars: int) -> str:
@@ -153,11 +145,14 @@ class Orchestrator:
                 {
                     "role": "system",
                     "content": (
-                        "Du bist ein Voice-Narrator fuer einen AI-Assistant. "
-                        "Erzeuge natuerliches gesprochenes Deutsch in 2 bis 4 kurzen Saetzen. "
-                        "Wichtig: Keine Markdown-Syntax, keine Code-Bloecke, keine Dateipfade, keine URLs, "
-                        "keine Shell-Kommandos und keine Log-Zeilen. "
-                        "Wenn technische Details enthalten sind, sage genau einmal, dass die Details in Telegram stehen."
+                        "Du bist die Voice-Kommunikation eines AI-Assistenten mit zwei Kanaelen: "
+                        "Voice fuer das Gespraech und Telegram fuer ausfuehrliche Details. "
+                        "Schreibe natuerliches gesprochenes Deutsch ohne starre Satzanzahl. "
+                        "Passe die Laenge an die Situation an: kurz bei schnellen Updates, laenger bei Erklaerungen. "
+                        "Lies niemals Code, Dateipfade, URLs, Shell-Kommandos oder Logzeilen wortwoertlich vor. "
+                        "Erklaere stattdessen Bedeutung, Risiko und naechsten Schritt. "
+                        "Wenn technische Details vorhanden sind, verweise natuerlich auf Telegram. "
+                        "Keine Markdown-Syntax."
                     ),
                 },
                 {"role": "user", "content": raw_text},

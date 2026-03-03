@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     openclaw_bin: str = Field(default="openclaw", alias="OPENCLAW_BIN")
     openclaw_channel: str = Field(default="telegram", alias="OPENCLAW_CHANNEL")
     openclaw_to: str = Field(default="", alias="OPENCLAW_TO")
+    openclaw_role_prompt_enabled: bool = Field(default=True, alias="OPENCLAW_ROLE_PROMPT_ENABLED")
     openclaw_timeout_seconds: int = Field(default=300, alias="OPENCLAW_TIMEOUT_SECONDS")
     openclaw_process_grace_seconds: int = Field(default=15, alias="OPENCLAW_PROCESS_GRACE_SECONDS")
     mirror_user_text_to_telegram: bool = Field(default=False, alias="MIRROR_USER_TEXT_TO_TELEGRAM")
