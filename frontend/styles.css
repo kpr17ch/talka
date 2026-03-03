@@ -28,33 +28,24 @@ body {
   background: transparent;
   padding: 0;
   cursor: pointer;
-  border-radius: 20px;
-  transition: transform 140ms ease, box-shadow 180ms ease;
-}
-
-.character-stage:hover {
-  transform: translateY(-1px);
-}
-
-.character-stage:active {
-  transform: scale(0.995);
+  outline: none;
+  transition: transform 120ms ease;
 }
 
 .character-stage:focus-visible {
-  outline: 2px solid #111;
-  outline-offset: 4px;
+  outline: none;
 }
 
 .character-stage.listening {
-  box-shadow: 0 0 0 14px rgba(17, 17, 17, 0.06);
+  box-shadow: none;
 }
 
 .character-stage.thinking {
-  animation: thinkingPulse 1s ease-in-out infinite;
+  animation: none;
 }
 
 .character-stage.speaking {
-  box-shadow: 0 6px 28px rgba(17, 17, 17, 0.15);
+  box-shadow: none;
 }
 
 .character-fallback {
@@ -87,16 +78,4 @@ body {
 
 audio {
   display: none;
-}
-
-@keyframes thinkingPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.14);
-  }
-  70% {
-    box-shadow: 0 0 0 16px rgba(17, 17, 17, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(17, 17, 17, 0);
-  }
 }
