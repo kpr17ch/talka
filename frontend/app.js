@@ -8,16 +8,16 @@ const IDLE_SMILE_FRAME_KEY = "idleSmile";
 const PAUSE_FRAME_KEY = "speakPMN";
 const VISEME_PAUSE = "__pause__";
 const FRAME_SOURCES = {
-  idleMain: "/assets/character/rick_main.jpeg",
-  idleSmile: "/assets/character/rick_smiling.jpeg",
-  speakAE: "/assets/character/rick_speak_ae.jpeg",
-  speakLTSCH: "/assets/character/rick_speak_ltsch.jpeg",
-  speakO: "/assets/character/rick_speak_o.jpeg",
-  speakPMN: "/assets/character/rick_speak_pmn.jpeg",
-  work0: "/assets/character/rick_work_a.jpeg",
-  work1: "/assets/character/rick_work_b.jpeg",
-  work2: "/assets/character/rick_work_c.jpeg",
-  work3: "/assets/character/rick_work_d.jpeg",
+  idleMain: "/assets/character/avatar_main.jpeg",
+  idleSmile: "/assets/character/avatar_smiling.jpeg",
+  speakAE: "/assets/character/avatar_speak_ae.jpeg",
+  speakLTSCH: "/assets/character/avatar_speak_ltsch.jpeg",
+  speakO: "/assets/character/avatar_speak_o.jpeg",
+  speakPMN: "/assets/character/avatar_speak_pmn.jpeg",
+  work0: "/assets/character/avatar_work_a.jpeg",
+  work1: "/assets/character/avatar_work_b.jpeg",
+  work2: "/assets/character/avatar_work_c.jpeg",
+  work3: "/assets/character/avatar_work_d.jpeg",
 };
 const SPEAK_FRAME_KEYS = ["speakAE", "speakLTSCH", "speakO", "speakPMN"];
 const WORK_FRAME_KEYS = ["work0", "work1", "work2", "work3"];
@@ -25,7 +25,7 @@ const WORK_TRANSITION_FRAME_KEY = "work3";
 const WORK_TYPING_FRAME_KEYS = ["work0", "work1", "work2"];
 const WORK_TRANSITION_MS = 180;
 const WORK_TYPING_INTERVAL_MS = 145;
-const RICK_CHROMA_KEY_PATTERN = /\/assets\/character\/rick_/;
+const GREEN_SCREEN_FRAME_PATTERN = /\/assets\/character\/avatar_.*\.jpe?g$/;
 const CHROMA_KEY_MIN_GREEN = 78;
 const CHROMA_KEY_MIN_DOMINANCE = 18;
 const CHROMA_KEY_SOFT_RANGE = 58;
@@ -194,7 +194,7 @@ async function decodeFrameToSurface(sourceUrl) {
     }
 
     workContext.drawImage(sourceSurface, 0, 0, width, height);
-    if (RICK_CHROMA_KEY_PATTERN.test(sourceUrl)) {
+    if (GREEN_SCREEN_FRAME_PATTERN.test(sourceUrl)) {
       const imageData = workContext.getImageData(0, 0, width, height);
       const pixels = imageData.data;
       for (let index = 0; index < pixels.length; index += 4) {

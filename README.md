@@ -126,6 +126,7 @@ app/
   llm_orchestrator.py  # LLM voice rewrite + dashboard panels
   turn_ack.py          # adaptive acknowledgements
 frontend/              # character UI (index.html, app.js, styles.css, frame assets)
+assets/characters/src/ # SVG sources + generator for the bundled character (Fenna)
 deploy/                # systemd unit, nginx configs, deploy scripts
 docs/                  # communication contract, deploy workflow
 tests/                 # pytest suite
@@ -143,4 +144,4 @@ Working single-user prototype (February–March 2026).
 - The web UI is deliberately minimal (character only). Panel data from the LLM orchestrator is produced but not shown.
 - The wake-phrase endpoint exists, but neither client uses it yet.
 - Prompts and the default STT language are German.
-- The UI animates a 10-frame character set (idle, smile, four mouth shapes, four work frames). [talkaz](https://github.com/kpr17ch/talkaz) can generate a frame pack in exactly this format from a photo.
+- The UI animates a 10-frame character set (idle, smile, four mouth shapes, four work frames). The bundled character is Fenna, an original flat-vector avatar built from SVG shapes in [`assets/characters/src/`](assets/characters/src/) (`python3 assets/characters/src/generate.py --out frontend/assets/character --format jpeg` re-renders the green-screen frames `avatar_*.jpeg` with headless Chrome). [talkaz](https://github.com/kpr17ch/talkaz) can generate a frame pack in exactly this format from a photo.
